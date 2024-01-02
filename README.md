@@ -19,6 +19,7 @@
 * 15+ SOTA Backbones
 * 10+ SOTA Semantic Segmentation Models
 * PyTorch, ONNX, TFLite, OpenVINO Export & Inference 
+* 新添加的内容：1. 原生库中有ConvNext网络，但是没有用到这个训练，在此基础上添加了基于base模型的网络训练；2. 从BEiTv2的代码库中找到该backbone，加入到该库中进行训练；结论：实际在face parsing过程中发现，ConvNext-B网络的mIoU比HRNet-W48-OCR网络低1个百分点，BEiTv2网络相对来说低2个百分点，建议使用ConvNext网络，推理速度相对较快一些。
 
 </div>
 
@@ -40,6 +41,7 @@ Supported Backbones:
 * [UniFormer](https://arxiv.org/abs/2201.09450) (ArXiv 2022)
 * [VAN](https://arxiv.org/abs/2202.09741) (ArXiv 2022)
 * [DaViT](https://arxiv.org/abs/2204.03645) (ArXiv 2022)
+* [BEiTv2](ICLR'2022)
 
 Supported Heads/Methods:
 * [FCN](https://arxiv.org/abs/1411.4038) (CVPR 2015)
