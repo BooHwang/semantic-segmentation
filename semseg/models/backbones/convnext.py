@@ -1,5 +1,7 @@
 import torch
 from torch import nn, Tensor
+import sys
+sys.path.append("/data4/face_parsing_task/val_test/semantic-segmentation")
 from semseg.models.layers import DropPath
 
 
@@ -67,7 +69,8 @@ class Downsample(nn.Sequential):
 convnext_settings = {
     'T': [[3, 3, 9, 3], [96, 192, 384, 768], 0.0],       # [depths, dims, dpr]
     'S': [[3, 3, 27, 3], [96, 192, 384, 768], 0.0],
-    'B': [[3, 3, 27, 3], [128, 256, 512, 1024], 0.0]
+    'B': [[3, 3, 27, 3], [128, 256, 512, 1024], 0.0],
+    'L': [[3, 3, 27, 3], [192, 384, 768, 1536], 0.0]
 }
 
 
@@ -109,8 +112,8 @@ class ConvNeXt(nn.Module):
 
 
 if __name__ == '__main__':
-    model = ConvNeXt('T')
-    # model.load_state_dict(torch.load('C:\\Users\\sithu\\Documents\\weights\\backbones\\convnext\\convnext_tiny_1k_224_ema.pth', map_location='cpu')['model'], strict=False)
+    model = ConvNeXt('B')
+    model.load_state_dict(torch.load('/data4/face_parsing_task/val_test/semantic-segmentation/checkpoints/pretrained/convnext_base_1k_384.pth', map_location='cpu')['model'], strict=False)
     x = torch.randn(1, 3, 224, 224)
     feats = model(x)
     for y in feats:

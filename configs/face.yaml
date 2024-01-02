@@ -1,0 +1,99 @@
+DEVICE          : cuda              # device used for training and evaluation (cpu, cuda, cuda0, cuda1, ...)
+SAVE_DIR        : 'output'         # output folder name used for saving the model, logs and inference results
+
+# MODEL:                                    
+#   NAME          : DDRNet                                           # name of the model you are using
+#   BACKBONE      : DDRNet-23slim                                    # model variant
+#   PRETRAINED    : 'checkpoints/pretrained/ddrnet/ddrnet_23slim.pth' # backbone model's weight
+#                                                                    # down from: https://drive.google.com/file/d/17sgZ8mRJFhsItmdTrifI1rloVq5K1WiC/view?usp=sharing
+#                                                                    # Belong to: https://github.com/ydhongHIT/DDRNet
+
+# MODEL:                                    
+#   NAME          : CustomCNN                                           # name of the model you are using
+#   BACKBONE      : PoolFormer-M36                                          # model variant
+#   PRETRAINED    : 'checkpoints/pretrained/poolformer_m36.pth'
+
+# MODEL:            
+#   NUM_CLASS     : 12                        
+#   NAME          : CustomCNN                                           # name of the model you are using
+#   BACKBONE      : ConvNeXt-B                                          # model variant
+#   PRETRAINED    : 'checkpoints/pretrained/convnext_base_1k_384.pth'   # down from: https://dl.fbaipublicfiles.com/convnext/convnext_base_1k_224_ema.pth
+#   IMG_SIZE      : 512                                                 # Belong to: https://github.com/facebookresearch/ConvNeXt
+
+# MODEL:            
+#   NUM_CLASS     : 12                        
+#   NAME          : CustomCNN                                           # name of the model you are using
+#   BACKBONE      : ConvNeXt-L                                          # model variant
+#   PRETRAINED    : 'checkpoints/pretrained/convnext_large_1k_384.pth'  # down from: https://dl.fbaipublicfiles.com/convnext/convnext_base_1k_224_ema.pth
+#   IMG_SIZE      : 512                                                 # Belong to: https://github.com/facebookresearch/ConvNeXt
+
+
+MODEL:            
+  NUM_CLASS     : 12                        
+  NAME          : BEiT2                                               # name of the model you are using
+  BACKBONE      : None                                                # model variant
+  PRETRAINED    : 'checkpoints/pretrained/beitv2_base_patch16_224_pt1k_ft21kto1k.pth'   # down from: https://github.com/microsoft/unilm/tree/master/beit2
+  IMG_SIZE      : 512   
+
+# MODEL:
+#   NUM_CLASS       : 12
+#   NAME            : BEiT2
+#   BACKBONE        : BEiT2-L
+#   PRETRAINED      : 'checkpoints/pretrained/beitv2_large_patch16_224_pt1k_ft1k.pth'
+#   IMG_SIZE        : 512
+
+# MODEL:
+#   NUM_CLASS       : 12
+#   NAME            : SegFormer
+#   BACKBONE        : MiT-B3
+#   PRETRAINED      : 'checkpoints/pretrained/segformer.b3.ade.pth'
+#   IMG_SIZE        : 512
+
+
+DATASET:
+  NAME          : FaceMask                                              # dataset name to be trained with (camvid, cityscapes, ade20k)
+  DATA_ROOT     : '/data4/face_parsing_task/val_test/faceparsing_training_data/CelebAMask-HQ_new_align_1221'
+  DATA_ROOT2    : '/data4/face_parsing_task/val_test/faceparsing_training_data/douyin_pornpics_manual_anno_new_align_1221'
+  DATA_ROOT3    : '/data4/face_parsing_task/val_test/faceparsing_training_data/cvpr_new_align_1221'
+  HAND_DATA_ROOT: '/data4/face_parsing_task/val_test/faceparsing_training_data/hands_datasets_v4'
+  MUTICLASS_ROOT: '/data4/face_parsing_task/faceparsing_training_data/coco/train2017'
+  EXTRA_BK_ROOT : '/data4/face_parsing_task/faceparsing_training_data/FM-basecases_1000_packages/train_data/background'
+
+TRAIN:
+  IMAGE_SIZE    : [512, 512]      # training image size in (h, w)
+  BATCH_SIZE    : 8               # batch size used to train
+  EPOCHS        : 220             # number of epochs to train
+  EVAL_INTERVAL : 1               # evaluation interval during training
+  AMP           : True            # use AMP in training
+  DDP           : True            # use DDP training
+
+LOSS:
+  NAME          : OhemCrossEntropy  # loss function name (OhemCrossEntropy, CrossEntropy, Dice)
+  CLS_WEIGHTS   : false           # use class weights in loss calculation
+
+OPTIMIZER:
+  NAME          : adamw           # optimizer name
+  LR            : 0.001           # initial learning rate used in optimizer
+  WEIGHT_DECAY  : 0.01            # decay rate used in optimizer 
+
+SCHEDULER:
+  NAME          : warmuppolylr    # scheduler name
+  POWER         : 0.9             # scheduler power
+  WARMUP        : 5               # warmup epochs used in scheduler
+  WARMUP_RATIO  : 0.1             # warmup ratio
+  
+
+EVAL:
+  MODEL_PATH    : 'output/DDRNet_DDRNet-23slim_HELEN_61_11.pth'    # trained model file path
+  IMAGE_SIZE    : [512, 512]                          # evaluation image size in (h, w)                       
+  MSF: 
+    ENABLE      : false                               # multi-scale and flip evaluation  
+    FLIP        : true                                # use flip in evaluation  
+    SCALES      : [0.5, 0.75, 1.0, 1.25, 1.5, 1.75]   # scales used in MSF evaluation                
+
+
+TEST:
+  MODEL_PATH    : '/data4/face_parsing_task/val_test/semantic-segmentation/output/BEiT2_None_FaceMask_140.pth'    # trained model file path
+  FILE          : '/data4/face_parsing_task/face_parsing/pornpics_test'                    # filename or foldername 
+  IMAGE_SIZE    : [512, 512]                          # inference image size in (h, w)
+  OVERLAY       : true                                # save the overlay result (image_alpha+label_alpha)

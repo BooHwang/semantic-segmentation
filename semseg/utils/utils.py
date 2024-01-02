@@ -53,7 +53,7 @@ def setup_ddp() -> int:
     if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
         rank = int(os.environ['RANK'])
         world_size = int(os.environ['WORLD_SIZE'])
-        gpu = int(os.environ(['LOCAL_RANK']))
+        gpu = int(os.environ['LOCAL_RANK'])
         torch.cuda.set_device(gpu)
         dist.init_process_group('nccl', init_method="env://",world_size=world_size, rank=rank)
         dist.barrier()

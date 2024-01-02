@@ -12,6 +12,9 @@ from torch.cuda.amp import GradScaler, autocast
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DistributedSampler, RandomSampler
 from torch import distributed as dist
+
+import sys
+sys.path.append("/data4/face_parsing_task/val_test/semantic-segmentation")
 from semseg.models import *
 from semseg.datasets import * 
 from semseg.augmentations import get_train_augmentation, get_val_augmentation
@@ -25,20 +28,23 @@ from val import evaluate
 def main(cfg, gpu, save_dir):
     start = time.time()
     best_mIoU = 0.0
-    num_workers = mp.cpu_count()
+    # num_workers = mp.cpu_count()
+    num_workers = 8
     device = torch.device(cfg['DEVICE'])
     train_cfg, eval_cfg = cfg['TRAIN'], cfg['EVAL']
     dataset_cfg, model_cfg = cfg['DATASET'], cfg['MODEL']
     loss_cfg, optim_cfg, sched_cfg = cfg['LOSS'], cfg['OPTIMIZER'], cfg['SCHEDULER']
     epochs, lr = train_cfg['EPOCHS'], optim_cfg['LR']
     
-    traintransform = get_train_augmentation(train_cfg['IMAGE_SIZE'], seg_fill=dataset_cfg['IGNORE_LABEL'])
-    valtransform = get_val_augmentation(eval_cfg['IMAGE_SIZE'])
+    # traintransform = get_train_augmentation(train_cfg['IMAGE_SIZE'], seg_fill=dataset_cfg['IGNORE_LABEL'])
+    # valtransform = get_val_augmentation(eval_cfg['IMAGE_SIZE'])
 
-    trainset = eval(dataset_cfg['NAME'])(dataset_cfg['ROOT'], 'train', traintransform)
-    valset = eval(dataset_cfg['NAME'])(dataset_cfg['ROOT'], 'val', valtransform)
+    # trainset = eval(dataset_cfg['NAME'])(dataset_cfg['ROOT'], 'train', traintransform)
+    # valset = eval(dataset_cfg['NAME'])(dataset_cfg['ROOT'], 'val', valtransform)
+    trainset = eval(dataset_cfg['NAME'])(model_cfg['IMG_SIZE'], dataset_cfg["DATA_ROOT"], dataset_cfg["DATA_ROOT2"], dataset_cfg["DATA_ROOT3"], '', cropsize=[448, 448], mode='train', hands_datasets_path=dataset_cfg["HAND_DATA_ROOT"], add_other_class=True, muticlass_path=dataset_cfg["MUTICLASS_ROOT"], add_edge=False, extra_background_path=dataset_cfg["EXTRA_BK_ROOT"])
+    valset = eval(dataset_cfg['NAME'])(model_cfg['IMG_SIZE'], dataset_cfg["DATA_ROOT"], dataset_cfg["DATA_ROOT2"], dataset_cfg["DATA_ROOT3"], '', mode='val')
     
-    model = eval(model_cfg['NAME'])(model_cfg['BACKBONE'], trainset.n_classes)
+    model = eval(model_cfg['NAME'])(model_cfg['BACKBONE'], model_cfg["NUM_CLASS"])
     model.init_pretrained(model_cfg['PRETRAINED'])
     model = model.to(device)
 
@@ -53,11 +59,11 @@ def main(cfg, gpu, save_dir):
 
     iters_per_epoch = len(trainset) // train_cfg['BATCH_SIZE']
     # class_weights = trainset.class_weights.to(device)
-    loss_fn = get_loss(loss_cfg['NAME'], trainset.ignore_label, None)
+    loss_fn = get_loss(loss_cfg['NAME'], trainset.ignore_lb, None)
     optimizer = get_optimizer(model, optim_cfg['NAME'], lr, optim_cfg['WEIGHT_DECAY'])
     scheduler = get_scheduler(sched_cfg['NAME'], optimizer, epochs * iters_per_epoch, sched_cfg['POWER'], iters_per_epoch * sched_cfg['WARMUP'], sched_cfg['WARMUP_RATIO'])
     scaler = GradScaler(enabled=train_cfg['AMP'])
-    writer = SummaryWriter(str(save_dir / 'logs'))
+    writer = SummaryWriter(str(save_dir / 'logs' / model_cfg["BACKBONE"]))
 
     for epoch in range(epochs):
         model.train()
@@ -93,13 +99,14 @@ def main(cfg, gpu, save_dir):
         torch.cuda.empty_cache()
 
         if (epoch+1) % train_cfg['EVAL_INTERVAL'] == 0 or (epoch+1) == epochs:
-            miou = evaluate(model, valloader, device)[-1]
-            writer.add_scalar('val/mIoU', miou, epoch)
+            if dist.get_rank() == 0:
+                miou = evaluate(model, valloader, device)[-1]
+                writer.add_scalar('val/mIoU', miou, epoch)
 
-            if miou > best_mIoU:
-                best_mIoU = miou
-                torch.save(model.module.state_dict() if train_cfg['DDP'] else model.state_dict(), save_dir / f"{model_cfg['NAME']}_{model_cfg['BACKBONE']}_{dataset_cfg['NAME']}.pth")
-            print(f"Current mIoU: {miou} Best mIoU: {best_mIoU}")
+                if miou > best_mIoU:
+                    best_mIoU = miou
+                    torch.save(model.module.state_dict() if train_cfg['DDP'] else model.state_dict(), save_dir / f"{model_cfg['NAME']}_{model_cfg['BACKBONE']}_{dataset_cfg['NAME']}.pth")
+                print(f"Current mIoU: {miou} Best mIoU: {best_mIoU}")
 
     writer.close()
     pbar.close()

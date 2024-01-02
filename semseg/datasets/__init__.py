@@ -16,6 +16,7 @@ from .lapa import LaPa
 from .ibugmask import iBugMask
 from .celebamaskhq import CelebAMaskHQ
 from .facesynthetics import FaceSynthetics
+from .face import FaceMask
 
 
 __all__ = [
@@ -38,4 +39,5 @@ __all__ = [
     'iBugMask',
     'CelebAMaskHQ',
     'FaceSynthetics',
+    'FaceMask',
 ]

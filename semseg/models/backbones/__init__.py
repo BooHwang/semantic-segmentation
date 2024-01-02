@@ -9,6 +9,8 @@ from .pvt import PVTv2, pvtv2_settings
 from .rest import ResT, rest_settings
 from .poolformer import PoolFormer, poolformer_settings
 from .convnext import ConvNeXt, convnext_settings
+# from .internimage import InternImage
+from .convnextv2 import ConvNeXtV2
 
 
 __all__ = [
@@ -23,4 +25,6 @@ __all__ = [
     'ResT',
     'PoolFormer',
     'ConvNeXt',
+    # 'InternImage',
+    'ConvNeXtV2',
 ]

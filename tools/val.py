@@ -18,7 +18,7 @@ from semseg.utils.utils import setup_cudnn
 def evaluate(model, dataloader, device):
     print('Evaluating...')
     model.eval()
-    metrics = Metrics(dataloader.dataset.n_classes, dataloader.dataset.ignore_label, device)
+    metrics = Metrics(12, dataloader.dataset.ignore_lb, device)
 
     for images, labels in tqdm(dataloader):
         images = images.to(device)
